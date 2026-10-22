@@ -4,143 +4,105 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>0xH4shDumb</title>
-<meta name="description" content="0xH4shDumb — cybersécurité offensive, alternant SOC. Projets, notes de pentest et writeups.">
-<meta name="color-scheme" content="dark light">
+<meta name="description" content="0xH4shDumb — cybersécurité offensive, alternant SOC. Un coffre-fort, un mot de passe, bonne chance.">
+<meta name="color-scheme" content="dark">
 <!-- ============================================================
      HUB / PORTFOLIO — hashdumb.fr  (statique, zéro dépendance)
-     Ajouter un projet : copier une <a class="card"> dans une grille.
+     Terminal troll + coffre-fort : les ressources sont chiffrées
+     (AES-GCM) dans COFFRE et ne s'ouvrent qu'avec le mot de passe.
+     Modifier le contenu : tools/coffre.json puis `node tools/scelle.mjs`.
+     Psst, toi qui lis le code source : c'est de la triche. 🤡
      ============================================================ -->
 <style>
   :root{
-    --bg:#0a0c10; --panel:#0f141b; --card:#0e141b; --line:#1c2631;
+    --bg:#0a0c10; --panel:#0f141b; --line:#1c2631;
     --fg:#d8e2ee; --muted:#7a8ba0; --dim:#4a5a6b;
     --accent:#3ddc84; --accent-soft:rgba(61,220,132,.12);
-    --cyan:#4cc9f0; --amber:#f6ad55;
+    --cyan:#4cc9f0; --amber:#f6ad55; --pink:#ff6bcb; --red:#ff6b6b;
     --radius:12px; --maxw:960px;
     --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  }
-  @media (prefers-color-scheme: light){
-    :root:not([data-theme="dark"]){
-      --bg:#f5f7fa; --panel:#fff; --card:#fff; --line:#e4e9ef;
-      --fg:#0d1826; --muted:#5a6676; --dim:#8a97a6;
-      --accent:#13a155; --accent-soft:rgba(19,161,85,.10);
-      --cyan:#0b7fb3; --amber:#b4690e;
-    }
-  }
-  :root[data-theme="light"]{
-    --bg:#f5f7fa; --panel:#fff; --card:#fff; --line:#e4e9ef;
-    --fg:#0d1826; --muted:#5a6676; --dim:#8a97a6;
-    --accent:#13a155; --accent-soft:rgba(19,161,85,.10);
-    --cyan:#0b7fb3; --amber:#b4690e;
+    --comic:"Comic Sans MS","Comic Neue","Chalkboard SE",cursive;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
   body{
-    margin:0; background:var(--bg); color:var(--fg);
-    font:15.5px/1.65 var(--sans); -webkit-font-smoothing:antialiased;
-    background-image:
-      radial-gradient(60% 60% at 50% -5%, var(--accent-soft), transparent 70%),
-      linear-gradient(transparent 0 97%, rgba(255,255,255,.015) 100%);
-    background-size:auto, 100% 3px;
+    margin:0; background:var(--bg); color:var(--fg); font:15px/1.6 var(--mono);
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(60% 60% at 50% -5%, var(--accent-soft), transparent 70%);
   }
-  a{color:inherit; text-decoration:none}
-  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px}
-  .mono{font-family:var(--mono)}
-  .accent{color:var(--accent)}
+  a{color:var(--cyan)}
+  .wrap{width:100%; max-width:var(--maxw); margin:0 auto; padding:0 16px}
 
-  /* ---------- HERO : fenêtre terminal ---------- */
-  header{padding:70px 0 40px}
+  header{min-height:100vh; min-height:100svh; display:flex; flex-direction:column; justify-content:center; padding:32px 0}
   .term{
     background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-    overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.35);
+    overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.45); cursor:text;
   }
-  .term .bar{
-    display:flex; align-items:center; gap:8px; padding:11px 14px;
-    border-bottom:1px solid var(--line); background:rgba(255,255,255,.015);
-  }
-  .term .bar i{width:11px;height:11px;border-radius:50%;display:inline-block;background:var(--dim)}
-  .term .bar i:nth-child(1){background:#ff5f56}
-  .term .bar i:nth-child(2){background:#ffbd2e}
-  .term .bar i:nth-child(3){background:#27c93f}
-  .term .bar span{margin-left:8px; color:var(--muted); font:12px/1 var(--mono)}
-  .term .body{padding:22px 20px 26px; font-family:var(--mono); font-size:14px; line-height:1.9}
-  .term .body .p{color:var(--accent)}         /* prompt */
-  .term .body .c{color:var(--fg)}             /* commande */
-  .term .body .o{color:var(--muted); display:block; margin:2px 0 14px; white-space:pre-wrap}
-  .term .body .o b{color:var(--fg); font-weight:600}
-  .cursor{display:inline-block;width:9px;height:17px;background:var(--accent);vertical-align:-3px;animation:blink 1.1s step-end infinite}
-  @keyframes blink{50%{opacity:0}}
-  .hname{font-size:clamp(26px,5vw,38px); margin:26px 0 6px; letter-spacing:-.02em}
-  .cta{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px}
-  .btn{
-    font:600 13.5px/1 var(--sans); padding:11px 16px; border-radius:9px;
-    border:1px solid var(--line); background:var(--panel); color:var(--fg);
-    transition:border-color .15s, transform .15s;
-  }
-  .btn:hover{border-color:var(--accent); transform:translateY(-1px)}
-  .btn.primary{background:var(--accent); color:#04120a; border-color:var(--accent)}
+  .term.shake{animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-8px) rotate(-.6deg)}40%{transform:translateX(8px) rotate(.6deg)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .bar{display:flex; align-items:center; gap:8px; padding:11px 14px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.015)}
+  .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .bar i:nth-child(1){background:#ff5f56} .bar i:nth-child(2){background:#ffbd2e} .bar i:nth-child(3){background:#27c93f}
+  .bar span{margin-left:8px; color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
-  /* ---------- Sections ---------- */
-  section{padding:30px 0}
-  .shead{display:flex; align-items:center; gap:10px; margin:0 0 18px}
-  .shead h2{font:600 13px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0}
-  .shead:before{content:"//"; color:var(--accent); font:700 13px/1 var(--mono)}
-  .grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
-  .card{
-    position:relative; display:flex; flex-direction:column; gap:7px;
-    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-    padding:16px 16px 14px; transition:border-color .15s, transform .15s, box-shadow .15s;
+  #out{
+    height:min(66vh,580px); overflow-y:auto; padding:20px; font-size:14px; line-height:1.6;
+    scrollbar-width:thin; scrollbar-color:var(--line) transparent;
   }
-  a.card:hover{border-color:var(--accent); transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,.28)}
-  .card .top{display:flex; align-items:center; justify-content:space-between; gap:10px}
-  .card h3{margin:0; font:600 15px/1.3 var(--mono)}
-  .card p{margin:0; color:var(--muted); font-size:13.5px}
-  .tag{font:600 10.5px/1 var(--mono); letter-spacing:.04em; padding:4px 8px; border-radius:6px; white-space:nowrap; border:1px solid var(--line); color:var(--cyan)}
-  .tag.lock{color:var(--amber); border-color:rgba(246,173,85,.35)}
-  .tag.wip{color:var(--dim)}
-  .card .go{margin-top:auto; font:12px/1 var(--mono); color:var(--dim)}
-  a.card:hover .go{color:var(--accent)}
+  .ln{white-space:pre-wrap; word-break:break-word; min-height:1.6em}
+  .err{color:var(--red)} .dim{color:var(--dim)} .mut{color:var(--muted)}
+  .cy{color:var(--cyan)} .am{color:var(--amber)} .ac{color:var(--accent)} .pk{color:var(--pink)}
+  .comic{font-family:var(--comic)}
+  .big{font-size:1.25em; font-weight:700}
+  .rainbow{
+    background:linear-gradient(90deg,#ff5f56,#ffbd2e,#27c93f,#4cc9f0,#a78bfa,#ff6bcb,#ff5f56);
+    background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:rb 2s linear infinite;
+  }
+  @keyframes rb{to{background-position:200% 0}}
+  .tbl{display:grid; grid-template-columns:max-content 1fr; column-gap:22px; margin:2px 0 6px}
+  .tbl > :nth-child(even){color:var(--muted)}
+  .art{white-space:pre; line-height:1.25; overflow-x:auto}
 
-  /* ---------- Terminal interactif (activé par JS) ---------- */
-  header.live{min-height:100vh; min-height:100svh; display:flex; flex-direction:column; justify-content:center; padding:40px 0}
-  .live .term{cursor:text}
-  .live .term .body{height:min(64vh,560px); overflow-y:auto; line-height:1.6; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
-  .term .body .ln{white-space:pre-wrap; word-break:break-word; min-height:1.6em}
-  .term .body .err{color:#ff6b6b}
-  .term .body .dim{color:var(--dim)}
-  .term .body .cy{color:var(--cyan)}
-  .term .body .am{color:var(--amber)}
-  .term .body .ac{color:var(--accent)}
-  .term .body .banner{margin:4px 0 14px; max-width:520px}
-  .banner svg{display:block; width:100%; height:auto; fill:var(--accent)}
+  .banner{margin:4px 0 14px; max-width:520px}
+  .banner svg{display:block; width:100%; height:auto; fill:var(--accent); animation:hue 6s linear infinite}
   .banner .sh{opacity:.45}
-  .term .body .tbl{display:grid; grid-template-columns:max-content 1fr; column-gap:22px; margin:2px 0 6px}
-  .term .body .cmd{
+  @keyframes hue{to{filter:hue-rotate(360deg)}}
+
+  .cmd{
     font:inherit; color:var(--cyan); background:none; border:0; padding:0; cursor:pointer;
     text-decoration:underline dotted; text-underline-offset:3px;
   }
-  .term .body .cmd:hover,.term .body .cmd:focus-visible{color:var(--accent); outline:none}
-  .term .body a{color:var(--cyan); text-decoration:underline; text-underline-offset:3px}
-  .term .body a:hover{color:var(--accent)}
-  .prompt-row{display:flex; align-items:baseline; gap:0}
+  .cmd:hover,.cmd:focus-visible{color:var(--accent); outline:none}
+  .prompt-row{display:flex; align-items:baseline}
   .ps1{white-space:nowrap}
   .ps1 .u{color:var(--accent)} .ps1 .h{color:var(--cyan)} .ps1 .d{color:var(--amber)}
-  #in{
-    flex:1; min-width:0; font:inherit; color:var(--fg); background:transparent; border:0; outline:none;
-    padding:0 0 0 .6ch; caret-color:var(--accent);
+  #in{flex:1; min-width:0; font:inherit; color:var(--fg); background:transparent; border:0; outline:none; padding:0 0 0 .6ch; caret-color:var(--accent)}
+
+  .chips{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px}
+  .chips button{
+    font:500 13.5px/1 var(--mono); padding:11px 16px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel); color:var(--fg); transition:border-color .15s, transform .15s;
   }
-  .live .cta .btn{font-family:var(--mono); font-weight:500}
+  .chips button:hover{border-color:var(--accent); transform:translateY(-1px) rotate(-1deg)}
+  .chips button.primary{background:var(--accent); color:#04120a; border-color:var(--accent)}
+
+  footer{color:var(--dim); font:13px/1.6 var(--comic); text-align:center; padding:0 16px 28px}
+
+  /* Confettis */
+  .confetti{position:fixed; top:-40px; font-size:24px; pointer-events:none; z-index:9; animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+  /* Mode arc-en-ciel (code Konami) */
+  body.disco .term{animation:hue 3s linear infinite}
+
   @media (max-width:560px){
-    .term .body{font-size:12.5px; padding:16px 14px 18px}
-    .term .body .tbl{grid-template-columns:1fr; row-gap:0}
-    .term .body .tbl > :nth-child(odd){margin-top:6px}
+    #out{font-size:12.5px; padding:16px 14px}
+    .tbl{grid-template-columns:1fr} .tbl > :nth-child(odd){margin-top:6px}
     .ps1 .hide-sm{display:none}
   }
-
-  footer{margin-top:24px; border-top:1px solid var(--line); padding:26px 0 46px; color:var(--dim); font:12.5px/1.6 var(--mono); text-align:center}
-  footer a{color:var(--muted)}
-  footer a:hover{color:var(--accent)}
+  @media (prefers-reduced-motion: reduce){
+    .rainbow,.banner svg,body.disco .term{animation:none}
+  }
 </style>
 </head>
 <body>
@@ -148,132 +110,45 @@
   <header>
     <div class="wrap">
       <div class="term" id="term">
-        <div class="bar"><i></i><i></i><i></i><span id="ttl">h4shdumb@hashdumb: ~</span></div>
-        <div class="body" id="out" aria-live="polite">
-          <!-- Contenu statique (sans JS). Remplacé par le terminal interactif au chargement. -->
-          <div><span class="p">$</span> <span class="c">whoami</span>
-            <span class="o"><b>0xH4shDumb</b> — étudiant en cybersécurité (M1), alternant SOC.</span>
-          </div>
-          <div><span class="p">$</span> <span class="c">cat ./focus.txt</span>
-            <span class="o">Pentest / red team. J'apprends en construisant : labs, automatisation,
-et un homelab auto-hébergé (0 port exposé, least privilege).</span>
-          </div>
-          <div><span class="p">$</span> <span class="c">ls ./</span>
-            <span class="o">ressources/   projets/   github/</span>
-          </div>
-          <div><span class="p">$</span> <span class="cursor"></span></div>
+        <div class="bar"><i></i><i></i><i></i><span id="ttl">terminal_de_ouf_v2_FINAL(3).exe</span></div>
+        <div id="out" aria-live="polite">
+          <noscript><div class="ln">bash: javascript: commande introuvable.</div>
+          <div class="ln">Active le JavaScript, grand-père 👴</div></noscript>
         </div>
       </div>
-      <div class="cta" id="chips">
-        <a class="btn primary" href="#projets">./projets</a>
-        <a class="btn" href="#ressources">./ressources</a>
-        <a class="btn" href="https://github.com/0xH4shDumb" target="_blank" rel="noopener">github ↗</a>
-      </div>
+      <div class="chips" id="chips"></div>
     </div>
   </header>
 
-  <!-- ====================== RESSOURCES ====================== -->
-  <section id="ressources">
-    <div class="wrap">
-      <div class="shead"><h2>ressources</h2></div>
-      <div class="grid">
-        <a class="card" href="https://notes.hashdumb.fr" target="_blank" rel="noopener">
-          <div class="top"><h3>Notes CPTS</h3><span class="tag">pentest</span></div>
-          <p>Fiches de pentest rédigées au fil du parcours CPTS (HTB Academy) — recon, web, AD, post-exploitation.</p>
-          <span class="go">notes.hashdumb.fr →</span>
-        </a>
-        <a class="card" href="https://flashcards.hashdumb.fr" target="_blank" rel="noopener">
-          <div class="top"><h3>Flashcards</h3><span class="tag">révision</span></div>
-          <p>Mes fiches de révision cyber en libre accès : cartes, répétition espacée, QCM et mode écriture.</p>
-          <span class="go">flashcards.hashdumb.fr →</span>
-        </a>
-        <a class="card" href="https://writeups.hashdumb.fr" target="_blank" rel="noopener">
-          <div class="top"><h3>WriteUps HTB</h3><span class="tag lock">🔒 privé</span></div>
-          <p>Résolutions de machines Hack The Box. Accès protégé (autorisation requise).</p>
-          <span class="go">writeups.hashdumb.fr →</span>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ====================== PROJETS ====================== -->
-  <section id="projets">
-    <div class="wrap">
-      <div class="shead"><h2>projets</h2></div>
-      <div class="grid">
-        <a class="card" href="https://github.com/0xH4shDumb/secure-n8n-assistant" target="_blank" rel="noopener">
-          <div class="top"><h3>secure-n8n-assistant</h3><span class="tag">self-host</span></div>
-          <p>Assistant personnel security-first sur n8n + Telegram : veille threat-intel, briefing quotidien, 0 port exposé.</p>
-          <span class="go">github →</span>
-        </a>
-        <a class="card" href="https://github.com/0xH4shDumb/HomeLab" target="_blank" rel="noopener">
-          <div class="top"><h3>HomeLab</h3><span class="tag">réseau</span></div>
-          <p>Configurations de mon homelab (GNS3) — topologies et scénarios.</p>
-          <span class="go">github →</span>
-        </a>
-        <a class="card" href="https://github.com/0xH4shDumb/Node-RED" target="_blank" rel="noopener">
-          <div class="top"><h3>Node-RED</h3><span class="tag">automatisation</span></div>
-          <p>Fonctions et flows réutilisables pour mes projets d'automatisation.</p>
-          <span class="go">github →</span>
-        </a>
-        <!-- Ajouter un projet : copie une carte ci-dessus, change lien / titre / texte. -->
-      </div>
-    </div>
-  </section>
-
-  <footer>
-    <div class="wrap">0xH4shDumb · <a href="https://github.com/0xH4shDumb" target="_blank" rel="noopener">github.com/0xH4shDumb</a> · cloudflare pages</div>
-  </footer>
+  <footer>© 0xH4shDumb · fait avec 🍟 et beaucoup trop de café · aucun hacker n'a été blessé</footer>
 
 <script>
-/* ============================================================
-   TERMINAL INTERACTIF
-   Les dossiers ressources/ et projets/ sont construits à partir
-   des cartes HTML ci-dessus : ajouter une carte = l'ajouter au terminal.
-   ============================================================ */
 (() => {
+  // Ressources chiffrées (AES-GCM, clé PBKDF2 dérivée du mot de passe). Généré par tools/scelle.mjs.
+  const COFFRE = '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';
+
   const out = document.getElementById('out');
   const term = document.getElementById('term');
-  const header = document.querySelector('header');
-  const GITHUB = 'https://github.com/0xH4shDumb';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sleep = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
 
-  // ---------- Système de fichiers virtuel ----------
-  const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-                     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const readCards = id => [...document.querySelectorAll(`#${id} .card`)].map(c => ({
-    name: slug(c.querySelector('h3').textContent),
-    title: c.querySelector('h3').textContent.trim(),
-    tag: c.querySelector('.tag')?.textContent.trim() || '',
-    lock: !!c.querySelector('.tag.lock'),
-    desc: c.querySelector('p').textContent.trim(),
-    url: c.href,
-  }));
-  const dirs = { ressources: readCards('ressources'), projets: readCards('projets') };
-  const files = {
-    'about.txt': () => [
-      line(`<b class="ac">0xH4shDumb</b> — étudiant en cybersécurité (M1), alternant SOC.`),
-      line(`Côté offensif : pentest / red team, en préparation de la <span class="cy">CPTS</span> (HTB).`),
-      line(`Côté défensif : SOC au quotidien — détection, triage, réponse.`),
-    ],
-    'focus.txt': () => [
-      line(`J'apprends en construisant : labs, automatisation,`),
-      line(`et un homelab auto-hébergé <span class="dim">(0 port exposé, least privilege)</span>.`),
-    ],
-    'contact.txt': () => [
-      line(`github  → <a href="${GITHUB}" target="_blank" rel="noopener">github.com/0xH4shDumb</a>`),
-    ],
-  };
-  let cwd = '';   // '' = ~
+  // ---------- État ----------
+  let cwd = '';                 // '' = ~, sinon '.coffre-fort'
+  let coffre = null;            // contenu déchiffré { ressources:[], projets:[] }
+  let helpCount = 0, fails = 0, busy = false;
+  const seen = { hidden: false, hint: false, rot: false, shadow: false, b64: false };
 
   // ---------- Rendu ----------
-  const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const cmdLink = (cmd, label = cmd) => `<button class="cmd" data-cmd="${esc(cmd)}">${esc(label)}</button>`;
   const line = (html = '', cls = '') => { const d = document.createElement('div'); d.className = 'ln ' + cls; d.innerHTML = html; return d; };
   const table = rows => { const d = document.createElement('div'); d.className = 'tbl';
-    d.innerHTML = rows.map(([a, b]) => `<span>${a}</span><span class="dim">${b}</span>`).join(''); return d; };
-  const ps1 = () => `<span class="ps1"><span class="u">h4shdumb</span><span class="hide-sm">@<span class="h">hashdumb</span></span>:<span class="d">~${cwd ? '/' + cwd : ''}</span>$</span>`;
+    d.innerHTML = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join(''); return d; };
+  const art = (txt, cls = '') => { const d = document.createElement('div'); d.className = 'art ' + cls; d.textContent = txt; return d; };
+  const ps1 = () => `<span class="ps1"><span class="u">visiteur</span><span class="hide-sm">@<span class="h">hashdumb</span></span>:<span class="d">~${cwd ? '/' + cwd : ''}</span>$</span>`;
   const print = nodes => { [].concat(nodes).forEach(n => out.insertBefore(n, row)); out.scrollTop = out.scrollHeight; };
+  const shake = () => { term.classList.remove('shake'); void term.offsetWidth; term.classList.add('shake'); };
 
   const L = { // lettres ANSI Shadow
     H:['██╗  ██╗','██║  ██║','███████║','██╔══██║','██║  ██║','╚═╝  ╚═╝'],
@@ -288,10 +163,10 @@ et un homelab auto-hébergé (0 port exposé, least privilege).</span>
   const banner = () => {
     const rows = [0,1,2,3,4,5].map(i => [...'H4SHDUMB'].map(c => L[c][i]).join(''));
     const W = rows[0].length, H = 1.9;
-    let rects = '';
     // Caractères d'ombre (╔═╗…) : segments fins vers les bords concernés (g, d, h, b)
     const SEG = { '═': 'gd', '║': 'hb', '╗': 'gb', '╔': 'db', '╝': 'gh', '╚': 'dh' }, t = .3;
     const r_ = (x, y, w, h, c = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}"${c}/>`;
+    let rects = '';
     rows.forEach((r, y) => [...r].forEach((ch, x) => {
       const Y = y * H, cx = x + .5 - t / 2, cy = Y + H / 2 - t / 2;
       if (ch === '█') return rects += r_(x, Y, 1.02, H + .02);
@@ -305,131 +180,200 @@ et un homelab auto-hébergé (0 port exposé, least privilege).</span>
     return d;
   };
 
-  // ---------- Résolution de chemins ----------
-  const resolveDir = p => {
-    p = (p || '~').replace(/\/+$/, '');
-    if (['', '~', '/', '..', '/home/h4shdumb'].includes(p)) return '';
-    if (p === '.') return cwd;
-    p = p.replace(/^(~|\.\.)\//, '').replace(/^\.\//, cwd ? cwd + '/' : '');
-    return dirs[p] ? p : null;
+  const confetti = () => {
+    if (reduce) return;
+    for (let i = 0; i < 70; i++) {
+      const s = document.createElement('span'); s.className = 'confetti';
+      s.textContent = pick(['🎉','🍟','🔓','⭐','🤡','💥','🏆','🍕']);
+      s.style.left = Math.random() * 100 + 'vw';
+      s.style.animationDuration = 2 + Math.random() * 2.5 + 's';
+      s.style.animationDelay = Math.random() * .8 + 's';
+      document.body.append(s); setTimeout(() => s.remove(), 6000);
+    }
   };
-  const findEntry = arg => {
-    if (!arg) return null;
-    let a = arg.replace(/^~\/?/, '').replace(/^\.\//, '').replace(/\/$/, '');
-    let [d, n] = a.includes('/') ? a.split('/') : [cwd, a];
-    if (!d) { for (const k in dirs) { const e = dirs[k].find(x => x.name === n); if (e) return e; } return null; }
-    return dirs[d]?.find(x => x.name === n) || null;
+
+  // ---------- Chiffrement ----------
+  const b64dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const ouvrir = async pw => {
+    try {
+      const raw = b64dec(COFFRE), salt = raw.slice(0, 16), iv = raw.slice(16, 28), ct = raw.slice(28);
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw.trim().toLowerCase()), 'PBKDF2', false, ['deriveKey']);
+      const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)));
+    } catch { return null; }
   };
+
+  // ---------- Système de fichiers ----------
+  const HINT_ROT13 = 'yr zbg qr cnffr rfg cynadhé qnaf /rgp/funqbj. puhg 🤫';
+  const SHADOW_PW = 'amFpbWVsZXNmcml0ZXM=';
+  const FILES = {
+    'devoirs.txt': () => [line("j'ai pas fait mes devoirs. 📚❌"), line('(le chien les a mangés 🐕)', 'dim')],
+    'pas_un_virus.exe': async () => {
+      print(line('⚠️  EXÉCUTION DE pas_un_virus.exe…', 'err'));
+      for (const p of [10, 40, 60, 90, 100]) { await sleep(350); print(line(`suppression de System32… ${'█'.repeat(p / 10)}${'░'.repeat(10 - p / 10)} ${p}%`, 'err')); }
+      await sleep(400); return [line('…', 'dim'), line('MDR c\'était une blague 🤡 t\'as eu peur hein', 'big comic rainbow')];
+    },
+    'photo_de_mon_chat.jpg': () => [art(' /\\_/\\\n( o.o )  < miaou. le mot de passe c\'est pas "miaou".\n > ^ <')],
+    '.pas_un_indice.txt': () => { seen.hint = true; return [line(HINT_ROT13), line('(bizarre, on dirait que les lettres ont été décalées…)', 'dim')]; },
+  };
+  const visible = () => Object.keys(FILES).filter(f => !f.startsWith('.'));
+  const listRoot = all => [line([
+    ...(all ? [cmdLink('cd .coffre-fort', '.coffre-fort/')] : []),
+    ...(all ? Object.keys(FILES) : visible()).map(f => cmdLink('cat ' + f, f)),
+  ].join('   '))];
+  const entries = () => coffre ? [...coffre.ressources, ...coffre.projets] : [];
+  const findEntry = n => entries().find(e => e.name === n);
   const showEntry = e => [
     line(`<b>${esc(e.title)}</b>  <span class="${e.lock ? 'am' : 'cy'}">[${esc(e.tag)}]</span>`),
-    line(esc(e.desc), 'dim'),
+    line(esc(e.desc), 'mut'),
     line(`→ <a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>  ${cmdLink('open ' + e.name, '[ouvrir]')}`),
   ];
-  const listDir = d => d === ''
-    ? [line(Object.keys(dirs).map(k => cmdLink('cd ' + k, k + '/')).join('   ') + '   ' +
-            Object.keys(files).map(f => cmdLink('cat ' + f, f)).join('   '))]
-    : [table(dirs[d].map(e => [cmdLink('cat ' + (cwd === d ? '' : d + '/') + e.name, e.name), `<span class="${e.lock ? 'am' : ''}">${esc(e.tag)}</span>`]))];
+  const listCoffre = () => ['ressources', 'projets'].flatMap(k => [
+    line(`${k}/`, 'am'),
+    table(coffre[k].map(e => [cmdLink('cat ' + e.name, e.name), `<span class="${e.lock ? 'am' : ''}">${esc(e.tag)}</span>`])),
+  ]);
+  const rot13 = s => s.replace(/[a-z]/gi, c => { const b = c <= 'Z' ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - b + 13) % 26 + b); });
 
   // ---------- Commandes ----------
   const history = []; let hIdx = 0;
+  const WRONG = [
+    'raté 🤡', 'toujours raté.', 'même mon chat aurait trouvé 🐈', 't\'es sûr que t\'es hacker ?',
+    'non. NON. ❌', 'ça devient gênant là…', `allez, tape ${cmdLink('indice')}, y'a pas de honte 🫣`,
+  ];
   const C = {
-    help: { d: 'liste des commandes', f: () => [
-      line('Commandes disponibles :', 'dim'),
-      table(Object.entries(C).filter(([, v]) => v.d).map(([k, v]) => [cmdLink(k), v.d])),
-      line(`<span class="dim">Astuces : Tab = complétion · ↑/↓ = historique · Ctrl+L = clear · tout ce qui est souligné est cliquable.</span>`),
-    ]},
-    whoami:  { d: 'qui suis-je', f: () => files['about.txt']() },
-    ls:      { d: 'lister le dossier courant', f: a => {
-      const d = a[0] ? resolveDir(a[0]) : cwd;
-      return d === null ? [line(`ls: impossible d'accéder à '${esc(a[0])}': Aucun fichier ou dossier de ce type`, 'err')] : listDir(d);
+    help: { d: 'à l\'aide', f: () => {
+      if (helpCount++ === 0) { shake(); return [line('non.', 'big comic'), line(`(bon ok, re-tape ${cmdLink('help')})`, 'dim')]; }
+      return [
+        line('🕹️  commandes (pas toutes, faut chercher un peu) :', 'mut'),
+        table(Object.entries(C).filter(([, v]) => v.d).map(([k, v]) => [cmdLink(k), v.d])),
+        line('Tab = complétion · ↑/↓ = historique · le souligné est cliquable', 'dim'),
+      ];
     }},
-    cd:      { d: 'changer de dossier', f: a => {
-      const d = resolveDir(a[0]);
-      if (d === null) return [line(`cd: ${esc(a[0])}: Aucun fichier ou dossier de ce type`, 'err')];
-      cwd = d; return [];
+    ls:     { d: 'regarder autour', f: a => {
+      const all = a.some(x => /^-\w*a/.test(x));
+      if (cwd) return coffre ? listCoffre() : [line('🔒 verrouillé', 'err')];
+      if (all) { seen.hidden = true; return listRoot(true); }
+      return [...listRoot(false), line('(y\'a rien d\'autre ici 👀 enfin… rien de <i>visible</i>)', 'dim')];
     }},
-    pwd:     { f: () => [line('/home/h4shdumb' + (cwd ? '/' + cwd : ''))] },
-    cat:     { d: 'afficher un fichier / une fiche', f: a => {
-      if (!a[0]) return [line('cat: opérande manquant', 'err')];
-      const f = a[0].replace(/^~\/|^\.\//, '');
-      if (!cwd && files[f]) return files[f]();
-      if (dirs[f.replace(/\/$/, '')]) return [line(`cat: ${esc(a[0])}: Est un dossier`, 'err')];
+    cd:     { d: 'bouger', f: a => {
+      const t = (a[0] || '~').replace(/\/+$/, '').replace(/^~\//, '').replace(/^\.\/(?=.)/, '');
+      if (['~', '..', '/', ''].includes(t)) { cwd = ''; return []; }
+      if (t === '.coffre-fort') {
+        if (!coffre) { shake(); return [line('🔒 ACCÈS REFUSÉ. ce coffre est protégé par un mot de passe.', 'err'), line(`utilise ${cmdLink('unlock')} &lt;motdepasse&gt;`, 'dim')]; }
+        cwd = t; return [line('🔓 bienvenue dans le coffre.', 'ac'), ...listCoffre()];
+      }
+      if (t === 'coffre-fort') return [line('presque ! les dossiers secrets commencent souvent par un truc…', 'am')];
+      return [line(`cd: ${esc(t)}: n'existe pas. comme mes devoirs.`, 'err')];
+    }},
+    cat:    { d: 'lire un fichier', f: a => {
+      const f = (a[0] || '').replace(/^\.\/(?=.)/, '').replace(/^~\//, '');
+      if (!f) return [line('cat: lire QUOI ? 🙄', 'err')];
+      if (f === '/etc/shadow') { seen.shadow = true; return [
+        line('root:*:19999:0:99999:7::: <span class="dim">← nope 👀</span>'),
+        line(`h4shdumb:${SHADOW_PW}:19999:0:99999:7:::`),
+        line('(hmm, ce "hash" a une drôle de tête… il finit par un =)', 'dim'),
+      ]; }
+      if (f === '/etc/passwd') return [line('root:x:0:0:root:/root:/bin/bash'), line('h4shdumb:x:1000:1000:le boss:/home/h4shdumb:/bin/frites')];
+      if (f === 'flag.txt') return [line('HTB{t_as_cru_que_c_etait_si_facile_🤡}', 'pk')];
+      if (!cwd && FILES[f]) return FILES[f]();
+      const e = cwd && findEntry(f); if (e) return showEntry(e);
+      return [line(`cat: ${esc(f)}: introuvable. t'as inventé ce fichier.`, 'err')];
+    }},
+    rot13:  { d: 'décaler les lettres de 13', f: a => {
+      if (!a.length) return [line('usage : rot13 &lt;texte&gt;', 'dim')];
+      const r = rot13(a.join(' ')); if (/shadow/.test(r)) seen.rot = true; return [line(esc(r))];
+    }},
+    base64: { d: 'encoder / décoder (-d)', f: a => {
+      const dec = a[0] === '-d', s = (dec ? a.slice(1) : a).join(' ');
+      if (!s) return [line('usage : base64 [-d] &lt;texte&gt;', 'dim')];
+      try {
+        const r = dec ? new TextDecoder().decode(b64dec(s)) : btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+        if (dec && s === SHADOW_PW) seen.b64 = true; return [line(esc(r))];
+      } catch { return [line('base64: entrée invalide. même pas du base64 ça 🙄', 'err')]; }
+    }},
+    unlock: { d: 'ouvrir le coffre', f: async a => {
+      if (!a.length) return [line('usage : unlock &lt;motdepasse&gt;', 'dim')];
+      if (coffre) return [line(`déjà ouvert, champion 🏆 → ${cmdLink('cd .coffre-fort')}`, 'ac')];
+      print(line('🔐 vérification…', 'dim'));
+      const c = await ouvrir(a.join(' '));
+      if (!c) { shake(); return [line(WRONG[Math.min(fails++, WRONG.length - 1)], 'err comic big')]; }
+      coffre = c; cwd = '.coffre-fort';
+      try { localStorage.setItem('coffre', a.join(' ')); } catch {}
+      confetti();
+      return [line(''), line('🎉 COFFRE OUVERT 🎉', 'big rainbow'),
+        line(`GG ! t'es un vrai hacker de 8 ans et demi${fails ? ` (après ${fails} essai${fails > 1 ? 's' : ''} raté${fails > 1 ? 's' : ''}, mais chut)` : ''} 🏆`, 'comic'),
+        line(''), ...listCoffre()];
+    }},
+    open:   { d: 'ouvrir un truc', f: a => {
+      if (!coffre) { shake(); return [line('t\'as cru que c\'était aussi facile ? ouvre le coffre d\'abord 🤡', 'err')]; }
       const e = findEntry(a[0]);
-      return e ? showEntry(e) : [line(`cat: ${esc(a[0])}: Aucun fichier ou dossier de ce type`, 'err')];
+      if (!e) return [line(`open: ${esc(a[0] || '?')}: connais pas.`, 'err')];
+      window.open(e.url, '_blank', 'noopener'); return [line(`→ c'est parti : ${esc(e.url)}`, 'dim')];
     }},
-    open:    { d: 'ouvrir une ressource / un projet', f: a => {
-      if (!a[0]) return [line('usage : open &lt;nom&gt;   ex. ' + cmdLink('open notes-cpts'), 'dim')];
-      if (a[0] === 'github') { window.open(GITHUB, '_blank', 'noopener'); return [line('→ ouverture de github.com/0xH4shDumb…', 'dim')]; }
-      const e = findEntry(a[0]);
-      if (!e) return [line(`open: ${esc(a[0])}: introuvable. Essaie ${cmdLink('ls ressources')} ou ${cmdLink('ls projets')}`, 'err')];
-      window.open(e.url, '_blank', 'noopener');
-      return [line(`→ ouverture de ${esc(e.url)}…`, 'dim')];
+    indice: { d: 'quand t\'es bloqué 🫣', f: () => [line('💡 ' + (
+      coffre ? 'ben… t\'as déjà gagné. va voir le coffre.' :
+      !seen.hidden ? `les fichiers timides se cachent derrière un point. essaie ${cmdLink('ls -a')}` :
+      !seen.hint ? `y'a un fichier qui dit qu'il est pas un indice. c'est un indice. ${cmdLink('cat .pas_un_indice.txt')}` :
+      !seen.rot ? 'César décalait ses lettres. de 13. la commande rot13 existe, je dis ça je dis rien.' :
+      !seen.shadow ? 'il t\'a dit où chercher. cat ce fichier là.' :
+      !seen.b64 ? 'un "hash" qui finit par = … c\'est du base64. base64 -d' :
+      'tu as le mot de passe. unlock &lt;le mot&gt;. allez.'
+    ), 'am')] },
+    whoami: { d: 'qui t\'es ?', f: () => [line('toi ? un visiteur. 👤'), line('moi ? <b class="ac">0xH4shDumb</b>. étudiant cyber, alternant SOC, pentester en herbe.'), line('mes trucs sont dans le coffre. bonne chance.', 'dim')] },
+    hack:   { d: 'hacker la NASA', f: async () => {
+      for (const s of ['connexion à nasa.gov…', 'contournement du firewall… ✔', 'injection SQL… ✔', 'téléchargement des aliens… 👽 47%']) { print(line('> ' + s, 'ac')); await sleep(500); }
+      shake(); return [line('❌ ANNULÉ : maman a dit non.', 'err big comic')];
     }},
-    ressources: { d: 'notes, flashcards, writeups', f: () => C.ls.f(['ressources']) },
-    projets:    { d: 'mes projets GitHub', f: () => C.ls.f(['projets']) },
-    github:     { d: 'mon profil GitHub', f: () => [line(`<a href="${GITHUB}" target="_blank" rel="noopener">github.com/0xH4shDumb</a>  ${cmdLink('open github', '[ouvrir]')}`)] },
-    contact:    { d: 'me joindre', f: () => files['contact.txt']() },
-    neofetch:   { d: 'infos système', f: () => [banner(), table([
-      ['<span class="ac">user</span>', '0xH4shDumb'],
-      ['<span class="ac">role</span>', 'étudiant M1 cyber · alternant SOC'],
-      ['<span class="ac">focus</span>', 'pentest · red team · homelab'],
-      ['<span class="ac">cert</span>', 'CPTS (en cours)'],
-      ['<span class="ac">host</span>', 'cloudflare edge · 0 serveur'],
-      ['<span class="ac">shell</span>', 'hashdumb-sh 1.0'],
-    ])]},
-    gui:      { d: 'version classique (cartes)', f: () => { document.getElementById('ressources').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return [line('↓ défilement vers la vue classique', 'dim')]; } },
-    history:  { f: () => history.map((h, i) => line(`<span class="dim">${String(i + 1).padStart(4)}</span>  ${esc(h)}`)) },
-    clear:    { d: 'nettoyer l\'écran', f: () => { [...out.children].forEach(n => n !== row && n.remove()); return []; } },
-    theme:    { d: 'basculer clair / sombre', f: () => {
-      const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === 'dark' : !matchMedia('(prefers-color-scheme: light)').matches;
-      r.dataset.theme = dark ? 'light' : 'dark';
-      try { localStorage.setItem('theme', r.dataset.theme); } catch {}
-      return [line(`thème : ${r.dataset.theme}`, 'dim')];
+    clear:  { d: 'tout effacer', f: () => { [...out.children].forEach(n => n !== row && n.remove()); return []; } },
+    // Commandes cachées (pas dans help)
+    sudo:   { f: () => [line('[sudo] mot de passe pour visiteur : ********'), line('visiteur n\'est pas dans le fichier sudoers. Cet incident sera signalé à ta maman. 🚨', 'err')] },
+    rm:     { f: async a => {
+      if (!a.join(' ').includes('-rf')) return [line('rm: non.', 'err')];
+      for (const f of ['/bin', '/home', '/etc', '/frites']) { print(line(`suppression de ${f}…`, 'err')); await sleep(300); }
+      return [line('…lol non. 🤡 tout est sur le cloud de toute façon.', 'comic big')];
     }},
-    echo:     { f: a => [line(esc(a.join(' ')))] },
-    date:     { f: () => [line(new Date().toLocaleString('fr-FR'))] },
-    sudo:     { f: () => [line(`[sudo] mot de passe pour visiteur : `), line(`visiteur n'apparaît pas dans le fichier sudoers. Cet incident sera signalé. 🚨`, 'err')] },
-    rm:       { f: a => [line(a.join(' ').includes('-rf') ? 'Nice try. Le site est servi depuis l\'edge, rien à supprimer ici 😉' : 'rm: permission refusée', 'err')] },
-    exit:     { f: () => [line('Il n\'y a pas d\'échappatoire. Tape ' + cmdLink('help') + '.', 'dim')] },
+    exit:   { f: () => { shake(); return [line('tu peux pas partir. personne ne part. 👁️👄👁️', 'comic')]; } },
+    pwd:    { f: () => [line(`/home/h4shdumb${cwd ? '/' + cwd : ''} <span class="dim">(dans ma maison 🏠)</span>`)] },
+    sl:     { f: async () => { // pour ceux qui tapent sl au lieu de ls
+      const train = '      ====        ________\n  _D _|  |_______/        \\__I_I_____\n   |(_)---  |   H\\________/ |   |   \n   /     |  |   H  |  |     |   |   \n  |      |  |   H  |__-----------------\n  | ________|___H__/__|_____/[][]~\\___\n  |/ |   |-----------I_____I [][] []  \n__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____\n |/-=|___|=    ||    ||    ||    |_____\n  \\_/      \\O=====O=====O=====O_/      ';
+      const el = art(train, 'ac'); el.style.overflow = 'hidden'; print(el);
+      for (let i = 60; i >= -60; i -= 2) { el.style.textIndent = '0'; el.style.transform = `translateX(${i}ch)`; await sleep(30); }
+      el.remove(); return [line('choo choo 🚂 (c\'est ls que tu voulais taper)', 'dim')];
+    }},
+    cowsay: { f: a => { const t = a.join(' ') || 'meuh'; return [art(` ${'_'.repeat(t.length + 2)}\n< ${t} >\n ${'-'.repeat(t.length + 2)}\n        \\   ^__^\n         \\  (oo)\\_______\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||`)]; } },
+    caca:   { f: () => [line('💩'.repeat(12))] },
+    echo:   { f: a => { const t = esc(a.join(' ')); return [line(t), line(t.slice(-4) + '…', 'mut'), line(t.slice(-2) + '…', 'dim')]; } },
+    date:   { f: () => [line('l\'heure de manger des frites 🍟')] },
+    lock:   { f: () => { coffre = null; cwd = ''; try { localStorage.removeItem('coffre'); } catch {} return [line('🔒 coffre refermé. à toi de rejouer.', 'am')]; } },
   };
-  const ALIASES = { '?': 'help', ll: 'ls', 'ls -la': 'ls', dir: 'ls', cls: 'clear', about: 'whoami', banner: 'neofetch', projects: 'projets', resources: 'ressources' };
+  const ALIASES = { '?': 'help', aide: 'help', ll: 'ls', dir: 'ls', cls: 'clear', hint: 'indice', about: 'whoami', quit: 'exit', '💩': 'caca' };
 
-  const run = raw => {
+  const run = async raw => {
+    if (busy) return;
     const input = raw.trim();
     print(line(`${ps1()} ${esc(raw)}`));
     if (!input) return;
     history.push(input); hIdx = history.length;
-    const full = ALIASES[input] || input;
-    const [name, ...args] = full.split(/\s+/);
+    const [name, ...args] = input.split(/\s+/);
     const cmd = C[ALIASES[name] || name];
-    if (!cmd) return print(line(`${esc(name)}: commande introuvable. Tape ${cmdLink('help')}.`, 'err'));
-    print(cmd.f(args));
-    psEl.innerHTML = ps1();
-    document.getElementById('ttl').textContent = `h4shdumb@hashdumb: ~${cwd ? '/' + cwd : ''}`;
+    if (!cmd) { shake(); return print(line(`${esc(name)}: commande introuvable. ${pick(['tu tapes avec tes coudes ?', 'essaie encore 🤡', 'nope.', 'jamais entendu parler.'])}`, 'err')); }
+    busy = true; inp.disabled = true;
+    try { print(await cmd.f(args)); }
+    finally { busy = false; inp.disabled = false; psEl.innerHTML = ps1(); if (matchMedia('(pointer:fine)').matches) inp.focus({ preventScroll: true }); }
   };
 
-  // ---------- Complétion ----------
+  // ---------- Complétion (n'aide pas pour les fichiers cachés, faut les trouver) ----------
   const complete = v => {
-    const parts = v.split(/\s+/);
-    if (parts.length === 1) {
-      const m = Object.keys(C).filter(k => k.startsWith(parts[0]));
-      return m.length === 1 ? m[0] + ' ' : (m.length > 1 && print([line(`${ps1()} ${esc(v)}`), line(m.join('   '), 'dim')]), v);
-    }
-    const last = parts.pop();
-    const pool = parts[0] === 'cd'
-      ? (cwd ? ['..'] : Object.keys(dirs).map(k => k + '/'))
-      : [...(cwd ? [] : [...Object.keys(files), ...Object.keys(dirs).map(k => k + '/')]),
-         ...(cwd ? dirs[cwd].map(e => e.name) : []),
-         ...(last.includes('/') ? (dirs[last.split('/')[0]] || []).map(e => last.split('/')[0] + '/' + e.name) : [])];
-    const m = [...new Set(pool)].filter(k => k.startsWith(last));
+    const parts = v.split(/\s+/), last = parts.pop();
+    const pool = parts.length ? [...visible(), ...(seen.hidden ? ['.pas_un_indice.txt', '.coffre-fort/'] : []), ...entries().map(e => e.name)]
+                              : Object.keys(C).filter(k => C[k].d);
+    const m = pool.filter(k => k.startsWith(last));
     if (m.length === 1) return [...parts, m[0]].join(' ') + (m[0].endsWith('/') ? '' : ' ');
     if (m.length > 1) print([line(`${ps1()} ${esc(v)}`), line(m.join('   '), 'dim')]);
     return v;
   };
 
   // ---------- Mise en place ----------
-  header.classList.add('live');
-  term.removeAttribute('role');
   out.innerHTML = '';
   const row = document.createElement('div'); row.className = 'prompt-row';
   const psEl = document.createElement('span'); psEl.innerHTML = ps1();
@@ -438,6 +382,11 @@ et un homelab auto-hébergé (0 port exposé, least privilege).</span>
   inp.setAttribute('aria-label', 'Commande du terminal');
   row.append(psEl, inp); out.append(row);
 
+  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a']; let kIdx = 0;
+  addEventListener('keydown', e => {
+    kIdx = e.key === KONAMI[kIdx] ? kIdx + 1 : (e.key === KONAMI[0] ? 1 : 0);
+    if (kIdx === KONAMI.length) { kIdx = 0; document.body.classList.toggle('disco'); confetti(); print(line('🕺 MODE DISCO 🪩', 'big rainbow')); }
+  });
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') { const v = inp.value; inp.value = ''; run(v); }
     else if (e.key === 'Tab') { e.preventDefault(); inp.value = complete(inp.value); }
@@ -446,35 +395,34 @@ et un homelab auto-hébergé (0 port exposé, least privilege).</span>
     else if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); C.clear.f(); }
     else if (e.key === 'c' && e.ctrlKey && !getSelection().toString()) { e.preventDefault(); print(line(`${ps1()} ${esc(inp.value)}^C`)); inp.value = ''; }
   });
-  out.addEventListener('click', e => {
-    const b = e.target.closest('.cmd');
-    if (b) { run(b.dataset.cmd); inp.focus({ preventScroll: true }); }
-  });
-  term.addEventListener('click', e => {
-    if (!e.target.closest('a,button') && !getSelection().toString()) inp.focus({ preventScroll: true });
-  });
+  out.addEventListener('click', e => { const b = e.target.closest('.cmd'); if (b) run(b.dataset.cmd); });
+  term.addEventListener('click', e => { if (!e.target.closest('a,button') && !getSelection().toString()) inp.focus({ preventScroll: true }); });
 
-  // Raccourcis cliquables sous le terminal (utile sur mobile)
+  // Raccourcis pour mobile (aucun ne donne la solution, évidemment)
   const chips = document.getElementById('chips');
-  chips.innerHTML = '';
-  [['help', true], ['whoami'], ['ressources'], ['projets'], ['neofetch'], ['gui']].forEach(([c, primary]) => {
-    const b = document.createElement('button'); b.className = 'btn' + (primary ? ' primary' : ''); b.textContent = c;
-    b.addEventListener('click', () => { run(c); inp.focus({ preventScroll: true }); }); chips.append(b);
+  [['help', true], ['ls'], ['indice'], ['whoami'], ['hack']].forEach(([c, primary]) => {
+    const b = document.createElement('button'); b.textContent = c; if (primary) b.className = 'primary';
+    b.addEventListener('click', () => run(c)); chips.append(b);
   });
 
-  // Écran d'accueil + saisie automatique de "whoami"
-  try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
-  print([banner(),
-    line(`Bienvenue sur <b class="ac">hashdumb.fr</b> — portfolio cyber de 0xH4shDumb.`),
-    line(`Tape ${cmdLink('help')} pour la liste des commandes, ou clique sur ce qui est souligné.`, 'dim'),
-    line('')]);
-  const autoType = (txt, done) => {
-    if (reduce) { done(); return; }
-    let i = 0; inp.disabled = true;
-    const tick = () => { inp.value = txt.slice(0, ++i); i < txt.length ? setTimeout(tick, 70 + Math.random() * 60) : setTimeout(() => { inp.value = ''; inp.disabled = false; done(); }, 250); };
-    setTimeout(tick, 500);
-  };
-  autoType('whoami', () => { run('whoami'); print(line('')); if (matchMedia('(pointer:fine)').matches) inp.focus({ preventScroll: true }); });
+  // Console du navigateur, pour les curieux
+  console.log('%c👀 tu fouilles dans la console ? respect. mais la réponse est pas ici.', 'font:16px sans-serif;color:#3ddc84');
+
+  // ---------- Écran d'accueil ----------
+  (async () => {
+    busy = true; inp.disabled = true;
+    for (const [s, cls] of [['> démarrage du terminal de ouf…', 'dim'], ['> chargement des frites… ██████████ 100% 🍟', 'dim'], ['> piratage de la NASA… 47% ❌ (maman a dit non)', 'err']]) { print(line(s, cls)); await sleep(450); }
+    await sleep(200);
+    print([line(''), banner(),
+      line('Salut ! 👋 Ici y\'a un <b class="am">coffre-fort</b> 🔐 rempli de trucs secrets.', 'comic'),
+      line('Trouve le mot de passe pour l\'ouvrir. Bonne chance (t\'en auras besoin 🤡).', 'comic'),
+      line(`Perdu ? tape ${cmdLink('help')}. Vraiment perdu ? ${cmdLink('indice')}.`, 'dim'),
+      line('')]);
+    let saved = null; try { saved = localStorage.getItem('coffre'); } catch {}
+    if (saved && (coffre = await ouvrir(saved))) print([line(`re ! 😎 le coffre est déjà ouvert → ${cmdLink('cd .coffre-fort')}`, 'ac'), line('')]);
+    busy = false; inp.disabled = false;
+    if (matchMedia('(pointer:fine)').matches) inp.focus({ preventScroll: true });
+  })();
 })();
 </script>
 </body>

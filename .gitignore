@@ -1,2 +1,5 @@
 # Fichier de contexte/handoff — local uniquement (infos d'infra, ne pas publier)
 CONTEXTE.md
+
+# Contenu du coffre en clair — local uniquement (chiffré dans index.html via tools/scelle.mjs)
+tools/coffre.json
