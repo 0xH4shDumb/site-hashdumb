@@ -3,7 +3,9 @@
 Hub / portfolio statique servi sur **hashdumb.fr** via **Cloudflare Pages** (aucun serveur).
 
 - Page unique : `index.html` (aucune dépendance, aucun build).
-- Pour ajouter un projet : copier une `<article class="card">` dans la bonne grille et changer le lien/titre/texte.
+- Page de garde = terminal interactif (`help`, `ls`, `cd`, `cat`, `open`, `neofetch`…), avec repli statique sans JS.
+- Pour ajouter un projet : copier une `<a class="card">` dans la bonne grille et changer le lien/titre/texte.
+  Le terminal lit ces cartes : la carte apparaît automatiquement dans `ls projets` / `ls ressources`.
 
 ## Déploiement (Cloudflare Pages)
 - Framework preset : **None**
