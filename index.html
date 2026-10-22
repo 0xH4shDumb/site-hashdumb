@@ -92,6 +92,24 @@
   .confetti{position:fixed; top:-40px; font-size:24px; pointer-events:none; z-index:9; animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 
+  /* Stickers memes en fond */
+  .stickers{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+  .sticker{
+    position:absolute; font:800 clamp(14px,2.2vw,26px)/1 var(--comic); white-space:nowrap; opacity:.13;
+    animation:float var(--d,9s) ease-in-out infinite alternate;
+  }
+  @keyframes float{from{transform:translateY(-14px) rotate(var(--r,0deg))}to{transform:translateY(14px) rotate(calc(var(--r,0deg) * -1))}}
+  header,footer{position:relative; z-index:1}
+
+  /* Aura */
+  .aura{margin-left:auto; font:700 12px/1 var(--mono); color:var(--amber); white-space:nowrap; flex:none; transition:transform .2s}
+  .aura.bump{transform:scale(1.35)}
+  .pop{position:fixed; z-index:10; pointer-events:none; font:800 22px/1 var(--comic); animation:pop 1.4s ease-out forwards; text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .pop.plus{color:var(--accent)} .pop.minus{color:var(--red)}
+  @keyframes pop{from{opacity:1; transform:translate(-50%,0) scale(.8)}to{opacity:0; transform:translate(-50%,-90px) scale(1.25)}}
+  .huge{font:900 clamp(26px,6vw,52px)/1.1 var(--comic); text-align:center; margin:8px 0}
+  body.quake{animation:shake .25s 4}
+
   /* Mode arc-en-ciel (code Konami) */
   body.disco .term{animation:hue 3s linear infinite}
 
@@ -101,16 +119,18 @@
     .ps1 .hide-sm{display:none}
   }
   @media (prefers-reduced-motion: reduce){
-    .rainbow,.banner svg,body.disco .term{animation:none}
+    .rainbow,.banner svg,body.disco .term,.sticker,body.quake{animation:none}
   }
 </style>
 </head>
 <body>
 
+  <div class="stickers" id="stickers" aria-hidden="true"></div>
+
   <header>
     <div class="wrap">
       <div class="term" id="term">
-        <div class="bar"><i></i><i></i><i></i><span id="ttl">terminal_de_ouf_v2_FINAL(3).exe</span></div>
+        <div class="bar"><i></i><i></i><i></i><span id="ttl">terminal_de_ouf_v2_FINAL(3).exe</span><b class="aura" id="aura" title="ton aura">✨ 0 aura</b></div>
         <div id="out" aria-live="polite">
           <noscript><div class="ln">bash: javascript: commande introuvable.</div>
           <div class="ln">Active le JavaScript, grand-père 👴</div></noscript>
@@ -180,17 +200,48 @@
     return d;
   };
 
-  const confetti = () => {
+  const confetti = (set = ['🎉','🍟','🔓','⭐','🤡','💥','🏆','🍕']) => {
     if (reduce) return;
     for (let i = 0; i < 70; i++) {
       const s = document.createElement('span'); s.className = 'confetti';
-      s.textContent = pick(['🎉','🍟','🔓','⭐','🤡','💥','🏆','🍕']);
+      s.textContent = pick(set);
       s.style.left = Math.random() * 100 + 'vw';
       s.style.animationDuration = 2 + Math.random() * 2.5 + 's';
       s.style.animationDelay = Math.random() * .8 + 's';
       document.body.append(s); setTimeout(() => s.remove(), 6000);
     }
   };
+
+  // ---------- Aura ----------
+  let aura = 0;
+  const auraEl = document.getElementById('aura');
+  const addAura = n => {
+    aura += n;
+    auraEl.textContent = `${aura < 0 ? '💀' : '✨'} ${aura} aura`;
+    auraEl.classList.add('bump'); setTimeout(() => auraEl.classList.remove('bump'), 200);
+    const r = term.getBoundingClientRect(), p = document.createElement('div');
+    p.className = 'pop ' + (n >= 0 ? 'plus' : 'minus');
+    p.textContent = `${n >= 0 ? '+' : ''}${n} aura`;
+    p.style.left = r.left + r.width * (.25 + Math.random() * .5) + 'px';
+    p.style.top = r.top + 60 + Math.random() * 120 + 'px';
+    document.body.append(p); setTimeout(() => p.remove(), 1500);
+  };
+
+  // ---------- Stickers memes en fond ----------
+  const STICKERS = ['6️⃣7️⃣', '67', 'SIX SEVEN 🤲', '+1000 aura', '-9999 aura', 'aura farming 🧘', 'TASTY CROUSTY 🍗',
+    'crousty 🔥', '🚌 merci le conducteur', '#1 VICTOIRE ROYALE', '🕺 default dance', 'skill issue', 'GG EZ',
+    'mewing 🤫🧏', 'tkt', '🍟', '🗿', 'ratio', 'POV : t\'as pas le mdp'];
+  const stickers = document.getElementById('stickers');
+  STICKERS.forEach((t, i) => {
+    const s = document.createElement('span'); s.className = 'sticker'; s.textContent = t;
+    // grille approximative pour éviter que tout s'entasse au même endroit
+    s.style.left = (i % 5) * 20 + Math.random() * 12 + '%';
+    s.style.top = Math.floor(i / 5) * 25 + Math.random() * 18 + '%';
+    s.style.setProperty('--r', (Math.random() * 30 - 15).toFixed(1) + 'deg');
+    s.style.setProperty('--d', (6 + Math.random() * 6).toFixed(1) + 's');
+    s.style.color = pick(['var(--accent)', 'var(--cyan)', 'var(--amber)', 'var(--pink)', 'var(--fg)']);
+    stickers.append(s);
+  });
 
   // ---------- Chiffrement ----------
   const b64dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -296,11 +347,11 @@
       if (coffre) return [line(`déjà ouvert, champion 🏆 → ${cmdLink('cd .coffre-fort')}`, 'ac')];
       print(line('🔐 vérification…', 'dim'));
       const c = await ouvrir(a.join(' '));
-      if (!c) { shake(); return [line(WRONG[Math.min(fails++, WRONG.length - 1)], 'err comic big')]; }
+      if (!c) { shake(); addAura(-100); return [line(WRONG[Math.min(fails++, WRONG.length - 1)], 'err comic big')]; }
       coffre = c; cwd = '.coffre-fort';
       try { localStorage.setItem('coffre', a.join(' ')); } catch {}
-      confetti();
-      return [line(''), line('🎉 COFFRE OUVERT 🎉', 'big rainbow'),
+      confetti(); addAura(1000);
+      return [line(''), line('#1 VICTOIRE ROYALE 🏆', 'huge rainbow'), line('🎉 COFFRE OUVERT 🎉', 'big rainbow'),
         line(`GG ! t'es un vrai hacker de 8 ans et demi${fails ? ` (après ${fails} essai${fails > 1 ? 's' : ''} raté${fails > 1 ? 's' : ''}, mais chut)` : ''} 🏆`, 'comic'),
         line(''), ...listCoffre()];
     }},
@@ -324,8 +375,47 @@
       for (const s of ['connexion à nasa.gov…', 'contournement du firewall… ✔', 'injection SQL… ✔', 'téléchargement des aliens… 👽 47%']) { print(line('> ' + s, 'ac')); await sleep(500); }
       shake(); return [line('❌ ANNULÉ : maman a dit non.', 'err big comic')];
     }},
+    aura:   { d: 'battle d\'aura ⚔️', f: async () => {
+      const opp = pick(['ton prof de maths', 'le chat du voisin', 'un bot Fortnite', 'le mec qui dit "quoicoubeh"', 'ta petite sœur', '0xH4shDumb']);
+      print([line(`⚔️  BATTLE D'AURA : <b class="ac">toi</b> vs <b class="pk">${esc(opp)}</b>`, 'big'), line('')]);
+      let me = 0, him = 0;
+      const MOVES = ['fait un mewing 🤫🧏', 'sort une default dance 🕺', 'dit "tkt" sans expliquer', 'ne cligne pas des yeux 🗿',
+        'commande un tasty crousty 🍗', 'fait 6-7 avec les mains 🤲', 'trébuche dans l\'escalier 💀', 'like sa propre story'];
+      for (let i = 0; i < 3; i++) {
+        await sleep(650);
+        const a = Math.round((Math.random() * 1600 - 500) / 10) * 10, b = Math.round((Math.random() * 1600 - 500) / 10) * 10;
+        me += a; him += b;
+        print([line(`toi ${pick(MOVES)} → <span class="${a >= 0 ? 'ac' : 'err'}">${a >= 0 ? '+' : ''}${a}</span>`),
+               line(`${esc(opp)} ${pick(MOVES)} → <span class="${b >= 0 ? 'ac' : 'err'}">${b >= 0 ? '+' : ''}${b}</span>`, 'mut')]);
+      }
+      await sleep(500);
+      if (opp === '0xH4shDumb') { addAura(-9999); return [line(''), line('💀 PERDU. 0xH4shDumb a une aura infinie ♾️. c\'était perdu d\'avance.', 'err big comic')]; }
+      addAura(me - him);
+      return [line(''), me > him ? line(`🏆 VICTOIRE (${me} vs ${him}). aura farming réussi.`, 'big rainbow') : line(`💀 DÉFAITE (${me} vs ${him}). skill issue.`, 'err big comic')];
+    }},
     clear:  { d: 'tout effacer', f: () => { [...out.children].forEach(n => n !== row && n.remove()); return []; } },
     // Commandes cachées (pas dans help)
+    67:     { f: async () => {
+      document.body.classList.remove('quake'); void document.body.offsetWidth; document.body.classList.add('quake');
+      const el = line('', 'huge'); print(el);
+      for (let i = 0; i < 8; i++) { el.textContent = i % 2 ? '🫳 6   7 🫴' : '🫴 6   7 🫳'; await sleep(180); }
+      el.textContent = 'SIX SEVEEEEN 🤲'; el.classList.add('rainbow'); addAura(67);
+      return [];
+    }},
+    tasty:  { f: async () => {
+      confetti(['🍗', '🍟', '🔥', '🌶️', '🍗']);
+      const el = line('', 'huge'); print(el);
+      for (const t of ['tasty…', 'tasty crousty…', 'TASTY CROUSTY 🍗🔥']) { el.textContent = t; await sleep(450); }
+      el.classList.add('rainbow'); addAura(500);
+      return [line('🎵 tasty crousty, tasty crousty 🎵', 'comic am')];
+    }},
+    dance:  { f: async () => { // default dance, version ASCII
+      const F = ['  o  \n /|\\ \n / \\ ', ' \\o/ \n  |  \n / \\ ', ' _o  \n  |\\ \n / \\ ', '  o_ \n /|  \n / \\ ', ' \\o  \n  |\\ \n  /> ', '  o/ \n /|  \n <\\  '];
+      const el = art('', 'ac big'); print(el);
+      for (let i = 0; i < 18; i++) { el.textContent = F[i % F.length]; await sleep(160); }
+      addAura(250); return [line('*default dance* 🕺 (le bus de combat 🚌 remercie le conducteur)', 'dim')];
+    }},
+    // Commandes cachées (suite)
     sudo:   { f: () => [line('[sudo] mot de passe pour visiteur : ********'), line('visiteur n\'est pas dans le fichier sudoers. Cet incident sera signalé à ta maman. 🚨', 'err')] },
     rm:     { f: async a => {
       if (!a.join(' ').includes('-rf')) return [line('rm: non.', 'err')];
@@ -346,7 +436,8 @@
     date:   { f: () => [line('l\'heure de manger des frites 🍟')] },
     lock:   { f: () => { coffre = null; cwd = ''; try { localStorage.removeItem('coffre'); } catch {} return [line('🔒 coffre refermé. à toi de rejouer.', 'am')]; } },
   };
-  const ALIASES = { '?': 'help', aide: 'help', ll: 'ls', dir: 'ls', cls: 'clear', hint: 'indice', about: 'whoami', quit: 'exit', '💩': 'caca' };
+  const ALIASES = { '?': 'help', aide: 'help', ll: 'ls', dir: 'ls', cls: 'clear', hint: 'indice', about: 'whoami', quit: 'exit', '💩': 'caca',
+    '6-7': '67', 'six-seven': '67', sixseven: '67', crousty: 'tasty', 'tasty-crousty': 'tasty', emote: 'dance', fortnite: 'dance', battle: 'aura' };
 
   const run = async raw => {
     if (busy) return;
@@ -356,7 +447,11 @@
     history.push(input); hIdx = history.length;
     const [name, ...args] = input.split(/\s+/);
     const cmd = C[ALIASES[name] || name];
-    if (!cmd) { shake(); return print(line(`${esc(name)}: commande introuvable. ${pick(['tu tapes avec tes coudes ?', 'essaie encore 🤡', 'nope.', 'jamais entendu parler.'])}`, 'err')); }
+    if (!cmd) {
+      shake(); addAura(-10);
+      if (/6\s*-?\s*7/.test(input)) print(line('…t\'as dit 6-7 ? 🤲', 'am comic'));
+      return print(line(`${esc(name)}: commande introuvable. ${pick(['tu tapes avec tes coudes ?', 'essaie encore 🤡', 'nope.', 'jamais entendu parler.', 'skill issue.'])}`, 'err'));
+    }
     busy = true; inp.disabled = true;
     try { print(await cmd.f(args)); }
     finally { busy = false; inp.disabled = false; psEl.innerHTML = ps1(); if (matchMedia('(pointer:fine)').matches) inp.focus({ preventScroll: true }); }
@@ -385,7 +480,7 @@
   const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a']; let kIdx = 0;
   addEventListener('keydown', e => {
     kIdx = e.key === KONAMI[kIdx] ? kIdx + 1 : (e.key === KONAMI[0] ? 1 : 0);
-    if (kIdx === KONAMI.length) { kIdx = 0; document.body.classList.toggle('disco'); confetti(); print(line('🕺 MODE DISCO 🪩', 'big rainbow')); }
+    if (kIdx === KONAMI.length) { kIdx = 0; document.body.classList.toggle('disco'); confetti(); addAura(6767); print(line('🕺 MODE DISCO 🪩', 'big rainbow')); }
   });
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') { const v = inp.value; inp.value = ''; run(v); }
@@ -400,7 +495,7 @@
 
   // Raccourcis pour mobile (aucun ne donne la solution, évidemment)
   const chips = document.getElementById('chips');
-  [['help', true], ['ls'], ['indice'], ['whoami'], ['hack']].forEach(([c, primary]) => {
+  [['help', true], ['ls'], ['indice'], ['aura'], ['hack']].forEach(([c, primary]) => {
     const b = document.createElement('button'); b.textContent = c; if (primary) b.className = 'primary';
     b.addEventListener('click', () => run(c)); chips.append(b);
   });
