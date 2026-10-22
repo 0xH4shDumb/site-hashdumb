@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0xH4shDumb</title>
+<meta name="description" content="Hub de 0xH4shDumb — étudiant en cybersécurité offensive, alternant SOC. Projets, notes de pentest et ressources.">
+<meta name="color-scheme" content="dark light">
+<!-- ============================================================
+     HUB / PORTFOLIO — hashdumb.fr
+     Page statique, zéro dépendance. Pour ajouter un projet :
+     copie une <article class="card"> dans la bonne grille.
+     ============================================================ -->
+<style>
+  :root{
+    --bg:#0b0f14; --bg2:#111820; --card:#141c26; --line:#223042;
+    --fg:#e6edf3; --muted:#9fb0c3; --accent:#2dd4bf; --accent2:#38bdf8;
+    --radius:14px; --maxw:1000px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f6f8fa; --bg2:#fff; --card:#fff; --line:#e3e8ee;
+      --fg:#0b1620; --muted:#55606b; --accent:#0d9488; --accent2:#0369a1;
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit; text-decoration:none}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px}
+
+  /* Hero */
+  header.hero{
+    padding:84px 0 56px; text-align:center;
+    background:
+      radial-gradient(60% 120% at 50% -10%, rgba(45,212,191,.14), transparent 60%),
+      radial-gradient(40% 80% at 80% 0%, rgba(56,189,248,.10), transparent 60%);
+  }
+  .badge{
+    display:inline-flex; gap:8px; align-items:center; font-size:13px; color:var(--muted);
+    border:1px solid var(--line); border-radius:999px; padding:6px 14px; background:var(--bg2);
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  h1{font-size:clamp(34px,7vw,56px); margin:18px 0 8px; letter-spacing:-.02em}
+  h1 .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  .tagline{color:var(--muted); font-size:clamp(16px,2.4vw,19px); margin:0 auto; max-width:620px}
+  .cta{margin-top:26px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+  .btn{
+    border:1px solid var(--line); background:var(--bg2); color:var(--fg);
+    padding:10px 18px; border-radius:10px; font-weight:600; font-size:14px;
+    transition:border-color .15s, transform .15s;
+  }
+  .btn:hover{border-color:var(--accent); transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#04121a; border:none}
+
+  /* Sections */
+  section{padding:46px 0}
+  .shead{display:flex; align-items:baseline; gap:12px; margin-bottom:22px}
+  .shead h2{font-size:22px; margin:0; letter-spacing:-.01em}
+  .shead .hint{color:var(--muted); font-size:13px}
+  .grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+
+  .card{
+    display:flex; flex-direction:column; gap:8px;
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 18px 16px; transition:border-color .15s, transform .15s, box-shadow .15s;
+  }
+  a.card:hover{border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .card .top{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .card h3{margin:0; font-size:16px}
+  .card p{margin:0; color:var(--muted); font-size:14px}
+  .tag{font-size:11px; color:var(--accent); border:1px solid var(--line); border-radius:999px; padding:3px 9px; white-space:nowrap}
+  .tag.wip{color:var(--muted)}
+  .tag.lock{color:var(--accent2)}
+  .arrow{color:var(--muted); font-size:13px; margin-top:auto}
+
+  footer{border-top:1px solid var(--line); padding:30px 0 50px; color:var(--muted); font-size:13px; text-align:center}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="badge"><span class="dot"></span> Disponible pour échanger · cybersécurité offensive</span>
+      <h1><span class="mono">0xH4shDumb</span></h1>
+      <p class="tagline">Étudiant en cybersécurité (M1), alternant SOC, orienté <strong>pentest / red team</strong>. J'apprends en construisant — labs, automatisation, et un homelab auto-hébergé.</p>
+      <div class="cta">
+        <a class="btn primary" href="#projets">Voir les projets</a>
+        <a class="btn" href="https://github.com/0xH4shDumb" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================== RESSOURCES / KNOWLEDGE BASE ====================== -->
+  <section id="ressources">
+    <div class="wrap">
+      <div class="shead"><h2>Ressources</h2><span class="hint">mes bases de connaissances</span></div>
+      <div class="grid">
+        <a class="card" href="https://notes.hashdumb.fr" target="_blank" rel="noopener">
+          <div class="top"><h3>Notes CPTS</h3><span class="tag">pentest</span></div>
+          <p>Fiches de pentest rédigées au fil du parcours CPTS (HTB Academy) — recon, web, AD, post-exploitation.</p>
+          <span class="arrow">notes.hashdumb.fr →</span>
+        </a>
+        <a class="card" href="#" aria-disabled="true">
+          <div class="top"><h3>WriteUps HTB</h3><span class="tag wip">à venir</span></div>
+          <p>Résolutions de machines Hack The Box, rédigées pas à pas.</p>
+          <span class="arrow">writeups.hashdumb.fr →</span>
+        </a>
+        <a class="card" href="https://cours.hashdumb.fr" target="_blank" rel="noopener">
+          <div class="top"><h3>Cours (Forgejo)</h3><span class="tag lock">privé</span></div>
+          <p>Archive de mes cours, auto-hébergée derrière Cloudflare Access.</p>
+          <span class="arrow">cours.hashdumb.fr →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== PROJETS ====================== -->
+  <section id="projets">
+    <div class="wrap">
+      <div class="shead"><h2>Projets</h2><span class="hint">sélection — tout sur GitHub</span></div>
+      <div class="grid">
+        <a class="card" href="https://github.com/0xH4shDumb/secure-n8n-assistant" target="_blank" rel="noopener">
+          <div class="top"><h3>secure-n8n-assistant</h3><span class="tag">self-host</span></div>
+          <p>Assistant personnel security-first sur n8n + Telegram : veille threat-intel, briefing quotidien, 0 port exposé, least privilege.</p>
+          <span class="arrow">github.com →</span>
+        </a>
+        <a class="card" href="https://github.com/0xH4shDumb/HomeLab" target="_blank" rel="noopener">
+          <div class="top"><h3>HomeLab</h3><span class="tag">réseau</span></div>
+          <p>Configurations de mon homelab (GNS3) — topologies et scénarios.</p>
+          <span class="arrow">github.com →</span>
+        </a>
+        <a class="card" href="https://github.com/0xH4shDumb/FlipperZero" target="_blank" rel="noopener">
+          <div class="top"><h3>FlipperZero</h3><span class="tag">hardware</span></div>
+          <p>Outils et expérimentations autour du Flipper Zero.</p>
+          <span class="arrow">github.com →</span>
+        </a>
+        <a class="card" href="https://github.com/0xH4shDumb/Node-RED" target="_blank" rel="noopener">
+          <div class="top"><h3>Node-RED</h3><span class="tag">automatisation</span></div>
+          <p>Fonctions et flows réutilisables pour mes projets d'automatisation.</p>
+          <span class="arrow">github.com →</span>
+        </a>
+        <!-- Pour ajouter un projet : copie une carte ci-dessus et change le lien / titre / texte. -->
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>0xH4shDumb · <a href="https://github.com/0xH4shDumb" target="_blank" rel="noopener">GitHub</a> · hébergé sur Cloudflare Pages</p>
+    </div>
+  </footer>
+
+</body>
+</html>
